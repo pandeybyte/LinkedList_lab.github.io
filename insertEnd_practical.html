@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>insertEnd() — Practical Demo</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Courier New', monospace; background: #0f1117; color: #e2e8f0; min-height: 100vh; padding: 16px; }
+
+h1 { text-align:center; font-size:18px; color:#7dd3fc; margin-bottom:4px; letter-spacing:1px; }
+.subtitle { text-align:center; font-size:12px; color:#64748b; margin-bottom:16px; }
+
+.main-grid { display:flex; gap:14px; flex-wrap:wrap; }
+
+/* CODE PANEL */
+.code-panel { flex:0 0 340px; background:#1e2130; border-radius:10px; padding:16px; border:1px solid #2d3748; }
+.code-panel h2 { font-size:12px; color:#94a3b8; margin-bottom:12px; letter-spacing:1px; text-transform:uppercase; }
+.code-line { display:flex; align-items:flex-start; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; transition:background .2s; margin-bottom:2px; border:1.5px solid transparent; }
+.code-line:hover { background:#252840; }
+.code-line.active { background:#1a2744; border-color:#3b82f6; }
+.code-line.done   { background:#142820; border-color:#22c55e44; }
+.line-num { color:#4a5568; font-size:11px; min-width:18px; margin-top:1px; user-select:none; }
+.line-code { font-size:12px; line-height:1.6; }
+.kw  { color:#c084fc; }
+.fn  { color:#60a5fa; }
+.str { color:#fbbf24; }
+.cm  { color:#4a5568; font-style:italic; }
+.var { color:#34d399; }
+.op  { color:#f472b6; }
+.num { color:#fb923c; }
+.active .line-code { color:#fff; }
+.exec-arrow { font-size:14px; color:#3b82f6; min-width:14px; opacity:0; transition:opacity .2s; }
+.active .exec-arrow { opacity:1; }
+
+/* VISUAL PANEL */
+.visual-panel { flex:1; min-width:280px; }
+
+.section { background:#1e2130; border-radius:10px; padding:14px; border:1px solid #2d3748; margin-bottom:12px; }
+.section h2 { font-size:11px; color:#94a3b8; margin-bottom:10px; letter-spacing:1px; text-transform:uppercase; }
+
+/* Explanation box */
+.explain-box { background:#0f1117; border-radius:8px; padding:12px 14px; border-left:3px solid #3b82f6; font-size:13px; line-height:1.7; min-height:52px; transition:border-color .3s; }
+.explain-box.ok   { border-color:#22c55e; }
+.explain-box.warn { border-color:#f59e0b; }
+.explain-box.err  { border-color:#ef4444; }
+.explain-box b { color:#7dd3fc; }
+.explain-box .tag { display:inline-block; font-size:10px; font-weight:700; padding:1px 7px; border-radius:12px; margin-right:4px; }
+.tag-step { background:#1d4ed8; color:#bfdbfe; }
+.tag-ok   { background:#14532d; color:#bbf7d0; }
+.tag-warn { background:#78350f; color:#fde68a; }
+.tag-err  { background:#7f1d1d; color:#fecaca; }
+
+/* Memory boxes */
+.mem-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+.mem-label { font-size:11px; color:#64748b; min-width:80px; }
+.mem-box { display:flex; align-items:center; background:#0f1117; border:1.5px solid #2d3748; border-radius:6px; overflow:hidden; font-size:12px; transition:all .4s; }
+.mem-box.active { border-color:#3b82f6; box-shadow:0 0 8px #3b82f644; }
+.mem-box.done   { border-color:#22c55e44; }
+.mem-box.new-node { border-color:#f59e0b; box-shadow:0 0 8px #f59e0b44; }
+.mem-data { padding:5px 10px; color:#e2e8f0; border-right:1px solid #2d3748; min-width:36px; text-align:center; }
+.mem-next { padding:5px 10px; color:#64748b; font-size:11px; }
+.mem-next.pointing { color:#60a5fa; }
+.mem-next.null-val { color:#ef4444; }
+.mem-arrow { color:#64748b; font-size:14px; margin:0 2px; transition:color .4s; }
+.mem-arrow.active { color:#60a5fa; }
+.ptr-badge { font-size:10px; padding:2px 7px; border-radius:10px; font-weight:700; }
+.ptr-head    { background:#1d4ed8; color:#bfdbfe; }
+.ptr-ik      { background:#78350f; color:#fde68a; }
+.ptr-ll      { background:#134e4a; color:#99f6e4; }
+.ptr-null    { background:#3f1f1f; color:#fca5a5; }
+
+/* Linked List Visual */
+.ll-visual { display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-height:52px; padding:6px 0; }
+.ll-node { display:flex; border-radius:7px; overflow:hidden; border:1.5px solid #2d3748; font-size:12px; transition:all .4s; }
+.ll-node .nd  { padding:8px 12px; background:#1a2130; color:#e2e8f0; border-right:1px solid #2d3748; font-weight:700; }
+.ll-node .nx  { padding:8px 10px; background:#141824; color:#64748b; font-size:11px; }
+.ll-node.head-node { border-color:#3b82f6; }
+.ll-node.head-node .nd { background:#1a2744; color:#7dd3fc; }
+.ll-node.cur-node  { border-color:#34d399; box-shadow:0 0 8px #34d39944; }
+.ll-node.cur-node .nd { background:#142820; color:#34d399; }
+.ll-node.new-node  { border-color:#f59e0b; box-shadow:0 0 8px #f59e0b55; animation: pulse .8s ease infinite alternate; }
+.ll-node.new-node .nd { background:#1f1a0f; color:#fbbf24; }
+.ll-arrow { color:#4a5568; font-size:18px; transition:color .4s; }
+.ll-arrow.active { color:#60a5fa; }
+.null-box { padding:7px 10px; background:#1f1010; border:1.5px solid #3f1f1f; border-radius:7px; color:#f87171; font-size:12px; font-weight:700; }
+.head-lbl { font-size:10px; color:#7dd3fc; display:block; text-align:center; margin-bottom:3px; }
+.ll-lbl   { font-size:10px; color:#34d399; display:block; text-align:center; margin-bottom:3px; }
+.ik-lbl   { font-size:10px; color:#fbbf24; display:block; text-align:center; margin-bottom:3px; }
+
+@keyframes pulse { from { box-shadow:0 0 6px #f59e0b44; } to { box-shadow:0 0 14px #f59e0b99; } }
+
+/* Controls */
+.controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.controls input { background:#0f1117; border:1.5px solid #2d3748; border-radius:7px; padding:7px 12px; font-size:13px; color:#e2e8f0; width:80px; font-family:inherit; outline:none; }
+.controls input:focus { border-color:#3b82f6; }
+btn, button { background:#0f1117; border:1.5px solid #2d3748; border-radius:7px; padding:7px 14px; font-size:12px; color:#94a3b8; cursor:pointer; font-family:inherit; transition:all .15s; }
+button:hover { border-color:#64748b; color:#e2e8f0; }
+.btn-next  { border-color:#3b82f6; color:#7dd3fc; }
+.btn-next:hover  { background:#1a2744; }
+.btn-insert { border-color:#22c55e; color:#34d399; }
+.btn-insert:hover { background:#142820; }
+.btn-reset { border-color:#ef444444; color:#f87171; }
+
+/* Trace */
+.trace-table { width:100%; border-collapse:collapse; font-size:11px; }
+.trace-table th { padding:5px 8px; color:#64748b; font-weight:600; border-bottom:1px solid #2d3748; text-align:left; }
+.trace-table td { padding:4px 8px; border-bottom:1px solid #1e2130; color:#94a3b8; font-family:'Courier New',monospace; }
+.trace-table tr:last-child td { border-bottom:none; }
+.badge-insert { background:#1d4ed8; color:#bfdbfe; padding:1px 7px; border-radius:10px; font-size:10px; }
+
+/* step indicator */
+.step-dots { display:flex; gap:5px; margin-bottom:10px; flex-wrap:wrap; }
+.dot { width:28px; height:5px; border-radius:3px; background:#2d3748; transition:background .3s; }
+.dot.done   { background:#22c55e; }
+.dot.active { background:#3b82f6; }
+</style>
+</head>
+<body>
+
+<h1>🔗 insertEnd() — Line by Line Practical</h1>
+<p class="subtitle">Linked List | MCA Data Structures — Har line ka visual explanation</p>
+
+<div class="controls">
+  <input type="number" id="val-inp" placeholder="Value" min="1" max="99" value="40">
+  <button class="btn-insert" onclick="startInsert()">▶ Insert karo</button>
+  <button class="btn-next"   onclick="nextStep()" id="btn-next" disabled>Next Step →</button>
+  <button class="btn-reset"  onclick="resetAll()">↺ Reset</button>
+</div>
+
+<div class="main-grid">
+
+  <!-- CODE PANEL -->
+  <div class="code-panel">
+    <h2>📄 Code — Click karo ya Next Step use karo</h2>
+
+    <div class="code-line" id="cl0" onclick="gotoStep(0)">
+      <span class="exec-arrow">▶</span>
+      <span class="line-num">1</span>
+      <span class="line-code"><span class="kw">void</span> <span class="fn">insertEnd</span>(<span class="kw">int</span> <span class="var">data</span>) {</span>
+    </div>
+    <div class="code-line" id="cl1" onclick="gotoStep(1)">
+      <span class="exec-arrow">▶</span>
+      <span class="line-num">2</span>
+      <span class="line-code"><span class="kw">  struct</span> Node *<span class="var">IK</span> = (<span class="kw">struct</span> Node*)<span class="fn">malloc</span>(...);</span>
+    </div>
+    <div class="code-line" id="cl2" onclick="gotoStep(2)">
+      <span class="exec-arrow">▶</span>
+      <span class="line-num">3</span>
+      <span class="line-code"><span class="var">  IK</span><span class="op">-></span>data = <span class="var">data</span>;</span>
+    </div>
+    <div class="code-line" id="cl3" onclick="gotoStep(3)">
+      <span class="exec-arrow">▶</span>
+      <span class="line-num">4</span>
+      <span class="line-code"><span class="cm">  // IK->next = NULL; ← missing!</span></span>
+    </div>
+    <div class="code-line" id="cl4" onclick="gotoStep(4)">
+      <span class="exec-arrow">▶</span>
+      <span class="line-num">5</span>
+      <span class="line-code"><span class="kw">  struct</span> Node *<span class="var">linkedlist</span> = <span class="var">head</span>;</span>
+    </div>
+    <div class="code-line" id="cl5" onclick="gotoStep(5)">
+      <span class="exec-arrow">▶</span>
+      <span class="line-num">6</span>
+      <span class="line-code"><span class="kw">  while</span>(<span class="var">linkedlist</span><span class="op">-></span>next <span class="op">!=</span> <span class="num">NULL</span>) {</span>
+    </div>
+    <div class="code-line" id="cl6" onclick="gotoStep(6)">
+      <span class="exec-arrow">▶</span>
+      <span class="line-num">7</span>
+      <span class="line-code"><span class="var">    linkedlist</span> = <span class="var">linkedlist</span><span class="op">-></span>next;</span>
+    </div>
+    <div class="code-line" id="cl7" onclick="gotoStep(7)">
+      <span class="exec-arrow">▶</span>
+      <span class="line-num">8</span>
+      <span class="line-code"><span class="var">  linkedlist</span><span class="op">-></span>next = <span class="var">IK</span>;</span>
+    </div>
+    <div class="code-line" id="cl8" onclick="gotoStep(8)">
+      <span class="exec-arrow">▶</span>
+      <span class="line-num">9</span>
+      <span class="line-code">}</span>
+    </div>
+
+    <div style="margin-top:14px">
+      <div class="step-dots" id="step-dots"></div>
+      <p style="font-size:11px;color:#4a5568">Step <span id="step-num">0</span> / 9</p>
+    </div>
+  </div>
+
+  <!-- VISUAL PANEL -->
+  <div class="visual-panel">
+
+    <!-- Explanation -->
+    <div class="section">
+      <h2>💡 Yeh Line Kya Karti Hai</h2>
+      <div class="explain-box" id="explain-box">
+        ☝️ <b>Pehle ek value enter karo</b> aur <b>"Insert karo"</b> button dabao.<br>
+        Phir <b>Next Step</b> se ek ek line samjho!
+      </div>
+    </div>
+
+    <!-- Linked List Visual -->
+    <div class="section">
+      <h2>🔗 Linked List — Live View</h2>
+      <div class="ll-visual" id="ll-visual">
+        <span style="color:#4a5568;font-size:12px">List empty hai — pehle insert karo</span>
+      </div>
+    </div>
+
+    <!-- Pointer Memory -->
+    <div class="section">
+      <h2>🧠 Pointer State</h2>
+      <div id="ptr-state">
+        <div class="mem-row">
+          <span class="mem-label"><span class="ptr-badge ptr-head">head</span></span>
+          <span style="font-size:12px;color:#4a5568">NULL (list empty)</span>
+        </div>
+        <div class="mem-row">
+          <span class="mem-label"><span class="ptr-badge ptr-ik">IK</span></span>
+          <span style="font-size:12px;color:#4a5568">— (abhi nahi bana)</span>
+        </div>
+        <div class="mem-row">
+          <span class="mem-label"><span class="ptr-badge ptr-ll">linkedlist</span></span>
+          <span style="font-size:12px;color:#4a5568">— (abhi shuru nahi)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trace -->
+    <div class="section">
+      <h2>📋 Insert History</h2>
+      <table class="trace-table">
+        <thead><tr>
+          <th>#</th><th>Value</th><th>List after insert</th>
+        </tr></thead>
+        <tbody id="trace-body">
+          <tr><td colspan="3" style="color:#4a5568;text-align:center;padding:10px">Koi insert nahi hua abhi</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+var list = [10, 20, 30];   // initial list
+var insertCnt = 0;
+var curStep = -1;
+var maxSteps = 9;
+var insertVal = 0;
+var llPtr = 0;             // index linkedlist pointer is on
+var insertActive = false;
+
+// ── Explanations per step ──────────────────────────────
+var explanations = [
+  { cls:'', html:'<span class="tag tag-step">Function Start</span> <b>insertEnd(data)</b> function call ho gaya.<br>Ab <b>data</b> parameter me woh value hai jo insert karni hai.' },
+  { cls:'warn', html:'<span class="tag tag-warn">Line 2 — malloc</span> <b>malloc()</b> se heap memory me ek naya Node banaya gaya.<br>→ <b>IK</b> pointer us naye Node ka address hold karta hai.<br><br>⚠️ <b>IK-&gt;next</b> abhi <b>garbage value</b> hai!' },
+  { cls:'ok', html:'<span class="tag tag-ok">Line 3 — data store</span> Naye node me <b>data value</b> store ho gayi.<br>→ <b>IK-&gt;data = '+insertVal+'</b> ✅<br>IK-&gt;next abhi bhi garbage hai!' },
+  { cls:'err', html:'<span class="tag tag-err">⚠️ Bug — Missing Line!</span> <b>IK-&gt;next = NULL</b> likhna chahiye tha yahan!<br><br>Bina is line ke IK-&gt;next me <b>random garbage address</b> hoga — program crash ya infinite loop ho sakta hai!<br><br>✅ <b>Sahi code:</b> IK-&gt;next = NULL;' },
+  { cls:'', html:'<span class="tag tag-step">Line 5 — linkedlist = head</span> <b>linkedlist</b> pointer ko <b>head</b> pe set kiya.<br>→ Traverse pehle node se shuru hoga.<br><br>Yeh head ki <b>copy</b> hai — head safe rahega! ✅' },
+  { cls:'', html:'<span class="tag tag-step">Line 6 — while loop check</span> <b>linkedlist-&gt;next != NULL</b> check kar rahe hain.<br>→ Agar next NULL nahi hai = aur nodes hain, aage badho<br>→ Agar next NULL hai = yahi <b>last node</b> hai, ruk jao ✅' },
+  { cls:'', html:'<span class="tag tag-step">Line 7 — linkedlist aage badha</span> <b>linkedlist = linkedlist-&gt;next</b><br>→ Pointer ek node aage badh gaya.<br>Yeh tab tak hoga jab tak last node na mile.' },
+  { cls:'ok', html:'<span class="tag tag-ok">Line 8 — JODO!</span> <b>linkedlist-&gt;next = IK</b><br>→ Last node ka next ab naye node (IK) ki taraf point karta hai.<br><br>✅ Naya node successfully end me jud gaya!' },
+  { cls:'ok', html:'<span class="tag tag-ok">Function Complete ✓</span> <b>insertEnd('+insertVal+')</b> successfully complete hua!<br><br>List me <b>'+insertVal+'</b> end me add ho gaya. 🎉' }
+];
+
+// ── Render Linked List ─────────────────────────────────
+function renderList(highlightIdx, ikVisible, llIdx) {
+  var vis = document.getElementById('ll-visual');
+  vis.innerHTML = '';
+
+  if(list.length === 0 && !ikVisible) {
+    vis.innerHTML = '<span style="color:#4a5568;font-size:12px">List empty hai</span>';
+    return;
+  }
+
+  for(var i=0; i<list.length; i++){
+    var wrap = document.createElement('div');
+    wrap.style.display='flex';wrap.style.flexDirection='column';wrap.style.alignItems='center';
+
+    var lbl = document.createElement('span');
+    if(i===0)   { lbl.className='head-lbl'; lbl.textContent='head'; }
+    else if(llIdx!==undefined && i===llIdx) { lbl.className='ll-lbl'; lbl.textContent='linkedlist'; }
+    else        { lbl.textContent=''; lbl.style.height='14px'; lbl.style.display='block'; }
+    wrap.appendChild(lbl);
+
+    var node = document.createElement('div');
+    node.className='ll-node'+(i===0?' head-node':'')+(llIdx!==undefined&&i===llIdx?' cur-node':'');
+    node.innerHTML='<span class="nd">'+list[i]+'</span><span class="nx '+(i<list.length-1?'pointing':ikVisible?'pointing':'null-val')+'">'+(i<list.length-1?'──▶':ikVisible?'──▶':'NULL')+'</span>';
+    wrap.appendChild(node);
+    vis.appendChild(wrap);
+
+    if(i<list.length-1){
+      var arr = document.createElement('span');
+      arr.className='ll-arrow active';
+      arr.style.marginTop='14px';
+      arr.textContent='';
+      vis.appendChild(arr);
+    }
+  }
+
+  if(ikVisible){
+    var arr2=document.createElement('span');arr2.className='ll-arrow active';arr2.style.marginTop='14px';arr2.textContent='';
+    vis.appendChild(arr2);
+    var ikWrap=document.createElement('div');ikWrap.style.display='flex';ikWrap.style.flexDirection='column';ikWrap.style.alignItems='center';
+    var ikLbl=document.createElement('span');ikLbl.className='ik-lbl';ikLbl.textContent='IK (new)';
+    ikWrap.appendChild(ikLbl);
+    var ikNode=document.createElement('div');ikNode.className='ll-node new-node';
+    ikNode.innerHTML='<span class="nd">'+insertVal+'</span><span class="nx null-val">NULL?</span>';
+    ikWrap.appendChild(ikNode);
+    vis.appendChild(ikWrap);
+  }
+}
+
+// ── Render Pointer State ───────────────────────────────
+function renderPtrs(ikReady, llIdx, ikDataSet) {
+  var s = document.getElementById('ptr-state');
+  var headStr = list.length>0 ? 'Node['+list[0]+'] (pehla node)' : 'NULL';
+  var ikStr   = !ikReady ? '— (abhi nahi bana)' : (ikDataSet ? 'Node['+insertVal+' | NULL?]' : 'Node[? | garbage]');
+  var llStr   = llIdx===undefined ? '— (abhi shuru nahi)' : 'Node['+list[llIdx]+'] (index '+llIdx+')';
+
+  s.innerHTML = 
+    '<div class="mem-row"><span class="mem-label"><span class="ptr-badge ptr-head">head</span></span><span style="font-size:12px;color:#7dd3fc">'+headStr+'</span></div>'+
+    '<div class="mem-row"><span class="mem-label"><span class="ptr-badge ptr-ik">IK</span></span><span style="font-size:12px;color:#fbbf24">'+ikStr+'</span></div>'+
+    '<div class="mem-row"><span class="mem-label"><span class="ptr-badge ptr-ll">linkedlist</span></span><span style="font-size:12px;color:#34d399">'+llStr+'</span></div>';
+}
+
+// ── Update Step Dots ───────────────────────────────────
+function updateDots(step) {
+  var d=document.getElementById('step-dots'); d.innerHTML='';
+  for(var i=0;i<maxSteps;i++){
+    var dot=document.createElement('div');
+    dot.className='dot'+(i<step?' done':i===step?' active':'');
+    d.appendChild(dot);
+  }
+  document.getElementById('step-num').textContent=step;
+}
+
+// ── Highlight Code Line ────────────────────────────────
+function highlightLine(n) {
+  for(var i=0;i<9;i++){
+    var el=document.getElementById('cl'+i);
+    if(i===n) el.className='code-line active';
+    else if(i<n) el.className='code-line done';
+    else el.className='code-line';
+  }
+}
+
+// ── Show Explanation ───────────────────────────────────
+function showExplain(step) {
+  var e=document.getElementById('explain-box');
+  var info=explanations[step];
+  e.className='explain-box '+(info.cls||'');
+  e.innerHTML=info.html;
+}
+
+// ── Go to step ────────────────────────────────────────
+function gotoStep(n) {
+  if(!insertActive) return;
+  curStep=n;
+  applyStep(n);
+}
+
+function applyStep(n) {
+  highlightLine(n);
+  showExplain(n);
+  updateDots(n+1);
+
+  if(n===0)  { renderList(false, false, undefined); renderPtrs(false, undefined, false); }
+  if(n===1)  { renderList(false, true, undefined);  renderPtrs(true, undefined, false); }
+  if(n===2)  { renderList(false, true, undefined);  renderPtrs(true, undefined, true); }
+  if(n===3)  { renderList(false, true, undefined);  renderPtrs(true, undefined, true); }
+  if(n===4)  { llPtr=0; renderList(false, true, llPtr); renderPtrs(true, llPtr, true); }
+  if(n===5)  { renderList(false, true, llPtr); renderPtrs(true, llPtr, true); }
+  if(n===6)  {
+    if(llPtr < list.length-1) { llPtr++; }
+    renderList(false, true, llPtr); renderPtrs(true, llPtr, true);
+    if(llPtr < list.length-1) { curStep=5; highlightLine(5); } // loop back
+  }
+  if(n===7)  {
+    list.push(insertVal);
+    renderList(false, false, list.length-1);
+    renderPtrs(true, list.length-1, true);
+  }
+  if(n===8)  {
+    renderList(false, false, undefined);
+    renderPtrs(true, undefined, true);
+    finishInsert();
+  }
+}
+
+function nextStep() {
+  if(!insertActive) return;
+  if(curStep>=8) return;
+  if(curStep===5 && llPtr < list.length-2) {
+    // still looping
+    llPtr++;
+    renderList(false, true, llPtr); renderPtrs(true, llPtr, true);
+    updateDots(curStep+1);
+    return;
+  }
+  if(curStep===5 && llPtr===list.length-2) {
+    // next will be last node — show step 6 (move) then 5 again check
+    llPtr++;
+    renderList(false,true,llPtr);renderPtrs(true,llPtr,true);
+    updateDots(6);
+    showExplain(6); highlightLine(6);
+    curStep=6;
+    return;
+  }
+  curStep++;
+  applyStep(curStep);
+}
+
+function finishInsert() {
+  insertCnt++;
+  var b=document.getElementById('trace-body');
+  if(insertCnt===1) b.innerHTML='';
+  var r=document.createElement('tr');
+  r.innerHTML='<td>'+insertCnt+'</td><td><span class="badge-insert">'+insertVal+'</span></td><td>'+list.join(' → ')+' → NULL</td>';
+  b.appendChild(r);
+  document.getElementById('btn-next').disabled=true;
+  insertActive=false;
+}
+
+function startInsert() {
+  var v=parseInt(document.getElementById('val-inp').value);
+  if(isNaN(v)||v<1||v>999){ alert('Valid number enter karo!'); return; }
+  insertVal=v;
+  insertActive=true;
+  curStep=0;
+  llPtr=0;
+  applyStep(0);
+  document.getElementById('btn-next').disabled=false;
+}
+
+function resetAll() {
+  list=[10,20,30]; insertCnt=0; curStep=-1; insertActive=false; insertVal=0; llPtr=0;
+  document.getElementById('explain-box').className='explain-box';
+  document.getElementById('explain-box').innerHTML='☝️ <b>Pehle ek value enter karo</b> aur <b>"Insert karo"</b> button dabao.<br>Phir <b>Next Step</b> se ek ek line samjho!';
+  document.getElementById('btn-next').disabled=true;
+  for(var i=0;i<9;i++) document.getElementById('cl'+i).className='code-line';
+  updateDots(0);
+  renderList(false,false,undefined);
+  renderPtrs(false,undefined,false);
+  document.getElementById('trace-body').innerHTML='<tr><td colspan="3" style="color:#4a5568;text-align:center;padding:10px">Koi insert nahi hua abhi</td></tr>';
+  document.getElementById('ptr-state').innerHTML=
+    '<div class="mem-row"><span class="mem-label"><span class="ptr-badge ptr-head">head</span></span><span style="font-size:12px;color:#7dd3fc">Node[10] (pehla node)</span></div>'+
+    '<div class="mem-row"><span class="mem-label"><span class="ptr-badge ptr-ik">IK</span></span><span style="font-size:12px;color:#4a5568">— (abhi nahi bana)</span></div>'+
+    '<div class="mem-row"><span class="mem-label"><span class="ptr-badge ptr-ll">linkedlist</span></span><span style="font-size:12px;color:#4a5568">— (abhi shuru nahi)</span></div>';
+  document.getElementById('ll-visual').innerHTML='';
+  renderList(false,false,undefined);
+}
+
+// Init
+updateDots(0);
+renderList(false,false,undefined);
+</script>
+</body>
+</html>
